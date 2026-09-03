@@ -49,6 +49,49 @@ describe('URL Parsing', () => {
   });
 });
 
+describe('URL Parsing with malformed percent-escapes', () => {
+  it('A trailing percent sign does not throw', () => {
+    const url = flexUrl(`${baseUrl}?discount=20%`);
+
+    expect(url.queryParams.get('discount')).to.be.deep.eq({key: 'discount', value: ['20%']});
+  });
+
+  it('A percent sign inside a word does not throw', () => {
+    const url = flexUrl(`${baseUrl}?q=50%off`);
+
+    expect(url.queryParams.get('q')).to.be.deep.eq({key: 'q', value: ['50%off']});
+  });
+
+  it('A malformed escape inside a filter does not throw', () => {
+    expect(() => flexUrl(`${baseUrl}?filter[status]=20%`)).to.not.throw();
+  });
+
+  it('A byte that is not valid UTF-8 does not throw', () => {
+    expect(() => flexUrl(`${baseUrl}?name=%FF`)).to.not.throw();
+  });
+
+  it('One malformed parameter does not stop the others from parsing', () => {
+    const url = flexUrl(`${baseUrl}?foo=bar&discount=20%&baz=qux`);
+
+    expect(url.params).to.be.lengthOf(3);
+    expect(url.queryParams.get('foo')).to.be.deep.eq({key: 'foo', value: ['bar']});
+    expect(url.queryParams.get('baz')).to.be.deep.eq({key: 'baz', value: ['qux']});
+  });
+
+  it('A re-serialised malformed value escapes the percent and then round-trips', () => {
+    const url = flexUrl(`${baseUrl}?discount=20%`);
+
+    expect(url.toString()).to.be.eq(`${baseUrl}?discount=20%25`);
+    expect(flexUrl(url.toString()).queryParams.get('discount')).to.be.deep.eq({key: 'discount', value: ['20%']});
+  });
+
+  it('Valid escapes still decode exactly as before', () => {
+    const url = flexUrl(`${baseUrl}?name=Rub%C3%A9n%20Robles`);
+
+    expect(url.queryParams.get('name')).to.be.deep.eq({key: 'name', value: ['Rubén Robles']});
+  });
+});
+
 describe('Query Parameters Manipulation', () => {
   it('Set query parameter with empty params returns empty query', () => {
     const url = flexUrl(baseUrl);

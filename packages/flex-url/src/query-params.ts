@@ -1,5 +1,5 @@
 import {type FlexibleUrl} from './flex-url.js';
-import {getAllIndexes, setValueFromIndexes} from './util.js';
+import {decodeURIComponentSafe, getAllIndexes, setValueFromIndexes} from './util.js';
 
 export type QueryParameterModifiers = string[];
 
@@ -38,7 +38,7 @@ export class QueryParameter {
   }
 
   static fromString(fragment: string): undefined | QueryParameter {
-    const [queryParameterKey, value] = decodeURIComponent(fragment).split('=');
+    const [queryParameterKey, value] = decodeURIComponentSafe(fragment).split('=');
 
     let key = queryParameterKey;
     let modifiers: QueryParameterModifiers = [];
