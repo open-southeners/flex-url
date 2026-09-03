@@ -30,7 +30,14 @@ use Stringable;
  *
  * Every mutator returns a *new* instance — the receiver is never modified.
  *
+ * `State`, `Encoding` and `Input` are stateless functional cores called
+ * statically by design (see their own docblocks), so PHPMD's StaticAccess rule
+ * does not apply here. Declaring that once keeps it from re-reporting on
+ * whichever lines a given pull request happens to touch.
+ *
  * @phpstan-import-type FilterEntry from State
+ *
+ * @SuppressWarnings("PHPMD.StaticAccess")
  */
 final readonly class FlexUrl implements Stringable
 {

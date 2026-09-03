@@ -37,6 +37,8 @@ namespace OpenSoutheners\FlexUrl\Internal;
  *   — including malformed input.
  *
  * @internal
+ *
+ * @SuppressWarnings("PHPMD.StaticAccess")
  */
 final class Encoding
 {

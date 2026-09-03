@@ -18,6 +18,8 @@ namespace OpenSoutheners\FlexUrl\Internal;
  * @phpstan-type SearchState array{term?: string, filters: list<SearchFilterEntry>}
  * @phpstan-type PageState array{number?: string, size?: string, cursor?: string}
  * @phpstan-type RawEntry array{path: list<string>, values: list<string>}
+ *
+ * @SuppressWarnings("PHPMD.StaticAccess")
  */
 final readonly class State
 {
