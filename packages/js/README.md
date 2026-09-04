@@ -321,7 +321,10 @@ apiable expects raw.
 `toRequestUri()` is the same string without the fragment (`pathname?query`) — the part that
 actually reaches the server — and mirrors the PHP package's `toRequestUri()`.
 
-## Upgrading from 1.x
+## Upgrading from 0.x / 1.x
+
+Full symbol-by-symbol migration guide, including the wire-format changes and what happens to
+URLs your users have already bookmarked: [MIGRATION.md](../../MIGRATION.md).
 
 v1's `FlexibleUrl` kept only the origin of the URL you constructed it from, so
 `router.visit(url.toString())` navigated to `/`. If you worked around that with something like

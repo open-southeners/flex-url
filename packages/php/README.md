@@ -297,6 +297,12 @@ FlexUrl::from($psrUri);                 // any PSR-7 UriInterface
 FlexUrl::from($request->fullUrl());     // Illuminate\Http\Request — pass the string, stay framework-free
 ```
 
+## Migrating from the TypeScript package's 0.x / 1.x
+
+This package has no 1.x line, but it shares v2's wire format. If you are moving a frontend off
+`flex-url` 0.x/1.x at the same time, [MIGRATION.md](../../MIGRATION.md) documents the
+query-string changes both sides must agree on.
+
 ## Test parity
 
 This package is tested against the same [shared JSON fixtures](../../fixtures/SCHEMA.md) as the
