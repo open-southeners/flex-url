@@ -1,6 +1,6 @@
 {
   "name": "flex-url",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Zero-dependency URL builder/parser for the apiable request grammar",
   "homepage": "https://github.com/open-southeners/flex-url#readme",
   "bugs": {
