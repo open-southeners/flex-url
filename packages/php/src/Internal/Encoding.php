@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace OpenSoutheners\FlexUrl\Internal;
 
+use OpenSoutheners\FlexUrl\FlexUrlOptions;
+
 /**
  * Encoding contract (mirrored from the TypeScript core's `encoding.ts` — do
  * not change without updating both, plus `fixtures/cases.json`):
@@ -99,15 +101,25 @@ final class Encoding
     /**
      * Encode a list of values into their comma-joined wire representation.
      *
-     * A comma inside a value is *not* escaped, because in list position there
+     * By default (lenient, `$options->strictCommaEncoding === false`), a
+     * comma inside a value is *not* escaped, because in list position there
      * is nothing to escape it from: the server splits the decoded value on
      * every comma, so `%2C` and `,` mean the same thing to it. Emitting the
      * comma raw keeps `toString()` idempotent.
      *
+     * With `strictCommaEncoding` enabled, a literal comma inside a value is
+     * kept percent-encoded (`%2C`) rather than unescaped, so it survives as
+     * part of the value instead of being read back as a separator — see
+     * `decodeList()`.
+     *
      * @param  list<string>  $values
      */
-    public static function encodeList(array $values): string
+    public static function encodeList(array $values, FlexUrlOptions $options = new FlexUrlOptions): string
     {
+        if ($options->strictCommaEncoding) {
+            return implode(',', array_map(self::encodeValue(...), $values));
+        }
+
         $encoded = array_map(
             static fn (string $value): string => str_replace('%2C', ',', self::encodeValue($value)),
             $values,
@@ -121,12 +133,22 @@ final class Encoding
      * separator however it was encoded. An empty raw string yields an empty
      * list rather than `['']`.
      *
+     * With `strictCommaEncoding` enabled, the *raw* (still percent-encoded)
+     * string is split on a literal `,` first, and each resulting piece is
+     * decoded afterwards — so a `%2C` inside a value is preserved as a
+     * literal comma rather than treated as a separator, restoring the
+     * ability to send a literal comma inside a single value.
+     *
      * @return list<string>
      */
-    public static function decodeList(string $raw): array
+    public static function decodeList(string $raw, FlexUrlOptions $options = new FlexUrlOptions): array
     {
         if ($raw === '') {
             return [];
+        }
+
+        if ($options->strictCommaEncoding) {
+            return array_map(self::decodeValue(...), explode(',', $raw));
         }
 
         return explode(',', self::decodeValue($raw));

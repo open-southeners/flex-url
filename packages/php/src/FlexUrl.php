@@ -41,7 +41,7 @@ use Stringable;
  */
 final readonly class FlexUrl implements Stringable
 {
-    private function __construct(private State $state) {}
+    private function __construct(private State $state, private FlexUrlOptions $options = new FlexUrlOptions) {}
 
     /**
      * Creates a `FlexUrl` builder/parser.
@@ -50,10 +50,12 @@ final readonly class FlexUrl implements Stringable
      * - `FlexUrl::make('/posts')` / `FlexUrl::make('https://api.example.com/posts?foo=bar')`
      *   — hydrates from a path or full URL (pathname/port/hash/existing params
      *   all preserved — "parse = build").
+     * - `$options` opts into non-default behaviour — currently just
+     *   `strictCommaEncoding`, see `FlexUrlOptions`.
      */
-    public static function make(?string $url = null): self
+    public static function make(?string $url = null, FlexUrlOptions $options = new FlexUrlOptions): self
     {
-        return self::from($url ?? '');
+        return self::from($url ?? '', $options);
     }
 
     /**
@@ -63,20 +65,21 @@ final readonly class FlexUrl implements Stringable
      * `psr/http-message` as a dependency. For `Illuminate\Http\Request`,
      * pass `$request->fullUrl()` — flex-url stays framework-free.
      */
-    public static function from(string|Stringable $input): self
+    public static function from(string|Stringable $input, FlexUrlOptions $options = new FlexUrlOptions): self
     {
         $parts = Input::parse((string) $input);
         $state = State::hydrateFromSearch(
             State::empty($parts['origin'], $parts['pathname'], $parts['hash']),
             $parts['search'],
+            $options,
         );
 
-        return new self($state);
+        return new self($state, $options);
     }
 
     private function withState(State $state): self
     {
-        return new self($state);
+        return new self($state, $this->options);
     }
 
     // ---------------------------------------------------------------------
@@ -319,7 +322,7 @@ final readonly class FlexUrl implements Stringable
     /** `pathname?query` — shared by the three output forms. */
     private function renderPathAndQuery(): string
     {
-        $query = State::buildQueryString($this->state);
+        $query = State::buildQueryString($this->state, $this->options);
 
         return $this->state->pathname.($query !== '' ? "?{$query}" : '');
     }
@@ -428,7 +431,7 @@ final readonly class FlexUrl implements Stringable
      */
     public function toQuery(): array
     {
-        parse_str(State::buildQueryString($this->state), $result);
+        parse_str(State::buildQueryString($this->state, $this->options), $result);
 
         return $result;
     }

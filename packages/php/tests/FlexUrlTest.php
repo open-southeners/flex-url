@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OpenSoutheners\FlexUrl\Tests;
 
 use OpenSoutheners\FlexUrl\FlexUrl;
+use OpenSoutheners\FlexUrl\FlexUrlOptions;
 use PHPUnit\Framework\TestCase;
 
 use function flex_url;
@@ -188,5 +189,22 @@ class FlexUrlTest extends TestCase
         $built = FlexUrl::make('http://localhost:8000/api/films?page%5Bnumber%5D=2');
 
         $this->assertSame(2, $built->getPage());
+    }
+
+    // -----------------------------------------------------------------
+    // FlexUrlOptions
+    // -----------------------------------------------------------------
+
+    public function test_strict_comma_encoding_option_round_trips_a_literal_comma_through_the_public_factory(): void
+    {
+        $options = new FlexUrlOptions(strictCommaEncoding: true);
+
+        $built = FlexUrl::make('/posts', $options)->filter('title', 'foo,bar');
+
+        $this->assertSame('/posts?filter[title]=foo%2Cbar', $built->toString());
+
+        $reparsed = FlexUrl::from($built->toString(), $options);
+
+        $this->assertSame('foo,bar', $reparsed->getFilter('title'));
     }
 }

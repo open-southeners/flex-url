@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OpenSoutheners\FlexUrl\Tests;
 
 use OpenSoutheners\FlexUrl\FlexUrl;
+use OpenSoutheners\FlexUrl\FlexUrlOptions;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -25,12 +26,14 @@ class FixturesTest extends TestCase
     }
 
     /**
-     * @param  array{name: string, base: string, build: list<array{op: string, args: list<mixed>}>, url: string, readsFrom?: string, reads?: list<array{op: string, args: list<mixed>, equals: mixed}>}  $testCase
+     * @param  array{name: string, base: string, build: list<array{op: string, args: list<mixed>}>, url: string, readsFrom?: string, reads?: list<array{op: string, args: list<mixed>, equals: mixed}>, options?: array{strictCommaEncoding?: bool}}  $testCase
      */
     #[DataProvider('cases')]
     public function test_case(array $testCase): void
     {
-        $builder = FlexUrl::make($testCase['base']);
+        $options = new FlexUrlOptions(strictCommaEncoding: $testCase['options']['strictCommaEncoding'] ?? false);
+
+        $builder = FlexUrl::make($testCase['base'], $options);
 
         foreach ($testCase['build'] as $step) {
             $builder = $builder->{$step['op']}(...$step['args']);
@@ -41,7 +44,7 @@ class FixturesTest extends TestCase
         // Re-parsing the canonical output must reproduce it byte for byte. Asserted
         // for every case rather than a chosen few: it is the invariant that breaks
         // first when encoding and parsing stop being exact inverses of each other.
-        $this->assertSame($testCase['url'], FlexUrl::make($testCase['url'])->toString());
+        $this->assertSame($testCase['url'], FlexUrl::make($testCase['url'], $options)->toString());
 
         if (! isset($testCase['reads'])) {
             return;
@@ -49,7 +52,7 @@ class FixturesTest extends TestCase
 
         // Parse-only cases read from the (possibly un-emittable) `base`; every
         // other case reads from `url` to assert that parse = build.
-        $reader = FlexUrl::make(($testCase['readsFrom'] ?? 'url') === 'base' ? $testCase['base'] : $testCase['url']);
+        $reader = FlexUrl::make(($testCase['readsFrom'] ?? 'url') === 'base' ? $testCase['base'] : $testCase['url'], $options);
 
         foreach ($testCase['reads'] as $read) {
             $this->assertEquals($read['equals'], $reader->{$read['op']}(...$read['args']), "read op \"{$read['op']}\" for fixture \"{$testCase['name']}\"");

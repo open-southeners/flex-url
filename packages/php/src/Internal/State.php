@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace OpenSoutheners\FlexUrl\Internal;
 
+use OpenSoutheners\FlexUrl\FlexUrlOptions;
+
 /**
  * Functional core: `State` is an immutable value object and every `with*`
  * static method below returns a *new* instance rather than mutating its
@@ -862,7 +864,7 @@ final readonly class State
     // Parsing an existing query string into state
     // -----------------------------------------------------------------
 
-    public static function hydrateFromSearch(self $state, string $search): self
+    public static function hydrateFromSearch(self $state, string $search, FlexUrlOptions $options = new FlexUrlOptions): self
     {
         $next = $state;
 
@@ -875,13 +877,13 @@ final readonly class State
                 $attribute = $path[0];
                 $operator = $path[1] ?? '';
 
-                $next = self::mergeFilterFromParse($next, $attribute, $operator, Encoding::decodeList($rawValue));
+                $next = self::mergeFilterFromParse($next, $attribute, $operator, Encoding::decodeList($rawValue, $options));
 
                 continue;
             }
 
             if ($base === 'sort' && count($path) === 0) {
-                foreach (Encoding::decodeList($rawValue) as $token) {
+                foreach (Encoding::decodeList($rawValue, $options) as $token) {
                     if ($token === '') {
                         continue;
                     }
@@ -896,7 +898,7 @@ final readonly class State
 
             if ($base === 'include' && count($path) === 0) {
                 $relationships = array_values(array_filter(
-                    Encoding::decodeList($rawValue),
+                    Encoding::decodeList($rawValue, $options),
                     static fn (string $token): bool => $token !== '',
                 ));
 
@@ -906,13 +908,13 @@ final readonly class State
             }
 
             if ($base === 'fields' && count($path) === 1) {
-                $next = self::addFields($next, $path[0], Encoding::decodeList($rawValue));
+                $next = self::addFields($next, $path[0], Encoding::decodeList($rawValue, $options));
 
                 continue;
             }
 
             if ($base === 'appends' && count($path) === 1) {
-                $next = self::addAppends($next, $path[0], Encoding::decodeList($rawValue));
+                $next = self::addAppends($next, $path[0], Encoding::decodeList($rawValue, $options));
 
                 continue;
             }
@@ -964,7 +966,7 @@ final readonly class State
     // Serialising state back into a query string
     // -----------------------------------------------------------------
 
-    public static function buildQueryString(self $state): string
+    public static function buildQueryString(self $state, FlexUrlOptions $options = new FlexUrlOptions): string
     {
         $pairs = [];
 
@@ -973,7 +975,7 @@ final readonly class State
                 foreach ($state->filters as $entry) {
                     $path = $entry['operator'] === '' ? [$entry['attribute']] : [$entry['attribute'], $entry['operator']];
 
-                    $pairs[] = Encoding::buildKey('filter', $path).'='.Encoding::encodeList($entry['values']);
+                    $pairs[] = Encoding::buildKey('filter', $path).'='.Encoding::encodeList($entry['values'], $options);
                 }
 
                 continue;
@@ -989,7 +991,7 @@ final readonly class State
                     $state->sorts,
                 );
 
-                $pairs[] = 'sort='.Encoding::encodeList($tokens);
+                $pairs[] = 'sort='.Encoding::encodeList($tokens, $options);
 
                 continue;
             }
@@ -999,14 +1001,14 @@ final readonly class State
                     continue;
                 }
 
-                $pairs[] = 'include='.Encoding::encodeList($state->includes);
+                $pairs[] = 'include='.Encoding::encodeList($state->includes, $options);
 
                 continue;
             }
 
             if ($id === 'fields') {
                 foreach ($state->fieldsOrder as $type) {
-                    $pairs[] = Encoding::buildKey('fields', [$type]).'='.Encoding::encodeList($state->fields[$type] ?? []);
+                    $pairs[] = Encoding::buildKey('fields', [$type]).'='.Encoding::encodeList($state->fields[$type] ?? [], $options);
                 }
 
                 continue;
@@ -1014,7 +1016,7 @@ final readonly class State
 
             if ($id === 'appends') {
                 foreach ($state->appendsOrder as $type) {
-                    $pairs[] = Encoding::buildKey('appends', [$type]).'='.Encoding::encodeList($state->appends[$type] ?? []);
+                    $pairs[] = Encoding::buildKey('appends', [$type]).'='.Encoding::encodeList($state->appends[$type] ?? [], $options);
                 }
 
                 continue;
