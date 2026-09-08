@@ -217,11 +217,22 @@ Omit the schema argument (explicit-generic-only usage) to skip these warnings en
   bracket/space/`%`/`=`/`&` inside one value can never be confused with the structural characters.
 - **A comma is always a separator** in a list-valued param, whether it arrives raw or as `%2C`.
   apiable splits the *decoded* value (`explode(',', …)` for `filter`, `sort`, `include`, `fields`
-  and `appends`), so the two were never distinguishable server-side — and the distinction could
-  not survive a round-trip anyway, since Symfony's `normalizeQueryString()` (behind Laravel's
+  and `appends`), so for that form the two reach the backend as the same thing — and the distinction could not
+  survive a round-trip anyway, since Symfony's `normalizeQueryString()` (behind Laravel's
   `fullUrl()`, and so behind every Inertia response) rewrites `filter[a]=1,2` as
   `filter%5Ba%5D=1%2C2`. A comma inside a single value is therefore not representable. Scalar
   params (`q`, `page[...]`, `param()`) are unaffected — nothing splits them.
+
+  This is a deliberate divergence from RFC 3986 rather than an application of it: §2.2 says data
+  conflicting with a delimiter "must be percent-encoded" and that percent-encoding a reserved
+  character "will change how the URI is interpreted", so the standard *does* define `%2C` and `,`
+  as different, and the older behaviour was the conformant one. It is abandoned because neither
+  the framework nor the backend implements that distinction. What flex-url emits stays
+  conformant: `,` is a `sub-delim`, so a raw comma is valid in a query string.
+
+  Two apiable paths do *not* split on commas — `filter[scope][...]` scope arguments and
+  `q[filter][attr][]` search filters — so a comma is literal content in both. flex-url matches
+  that: only the comma-list buckets split, and scalar params keep their commas.
 - Parsing accepts **both** raw and percent-encoded brackets on input — apiable's own pagination
   `links` use `page%5Bnumber%5D`.
 - Parsing uses `application/x-www-form-urlencoded` semantics for the query string — what

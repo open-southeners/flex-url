@@ -12,13 +12,25 @@
  * - A COMMA IS ALWAYS A SEPARATOR in a list-valued param, whether it arrives
  *   raw or as `%2C`. Lists are decoded first and split afterwards, and a comma
  *   inside a value is emitted raw rather than escaped. apiable does the same
- *   thing — `explode(',', $decodedValue)` for `filter`, `sort`, `include`,
- *   `fields` and `appends` — so `%2C` and `,` were never distinguishable
- *   server-side, and pretending otherwise made flex-url report one opaque
- *   value for a URL the backend filters by several. It also could not survive
- *   a round-trip: Symfony's `normalizeQueryString()` (behind Laravel's
- *   `fullUrl()`, and so behind every Inertia response) rewrites `filter[a]=1,2`
- *   as `filter%5Ba%5D=1%2C2`. A comma inside a single value is therefore not
+ *   thing for the comma-list form — `explode(',', $decodedValue)` for
+ *   `filter`, `sort`, `include`, `fields` and `appends` — so the two reach the
+ *   backend as the same thing, and pretending otherwise made flex-url report
+ *   one opaque value for a URL it filters by several. (Two paths do *not*
+ *   split: `filter[scope][...]` scope arguments, and `q[filter][attr][]`. A
+ *   comma is literal in both, which is why flex-url leaves scalar params
+ *   alone.) Nor could the distinction survive a round-trip:
+ *   Symfony's `normalizeQueryString()` (behind Laravel's `fullUrl()`, and so
+ *   behind every Inertia response) rewrites `filter[a]=1,2` as
+ *   `filter%5Ba%5D=1%2C2`.
+ *
+ *   This is a deliberate divergence from RFC 3986, not an application of it.
+ *   §2.2 says data conflicting with a delimiter "must be percent-encoded", and
+ *   that percent-encoding a reserved character "will change how the URI is
+ *   interpreted" — so the standard does define `%2C` and `,` as different, and
+ *   the older behaviour was the conformant one. It is abandoned here because
+ *   neither the framework nor the backend implements that distinction, and a
+ *   contract nothing honours is worse than none. Emission stays conformant
+ *   either way: `,` is a `sub-delim`, so a raw comma is valid in a query. A comma inside a single value is therefore not
  *   representable — the same limitation as OpenAPI's `style: form,
  *   explode: false`. Scalar params (`q`, `page[...]`, `param()`) are
  *   unaffected: nothing splits them, so their commas stay literal.
