@@ -1,4 +1,4 @@
-import {parseKey} from './encoding.js';
+import {parseKey, type FlexUrlOptions} from './encoding.js';
 import {parseInput} from './input.js';
 import {
   buildQueryString,
@@ -123,14 +123,16 @@ function mergeFilterParam(target: Record<string, unknown>, attribute: string, op
 export class FlexUrl<S extends EndpointSchema | undefined = undefined> {
   private readonly state: FlexUrlState;
   private readonly schema?: EndpointSchema;
+  private readonly options: Required<FlexUrlOptions>;
 
-  constructor(state: FlexUrlState, schema?: EndpointSchema) {
+  constructor(state: FlexUrlState, schema?: EndpointSchema, options?: FlexUrlOptions) {
     this.state = state;
     this.schema = schema;
+    this.options = {strictCommaEncoding: options?.strictCommaEncoding ?? false};
   }
 
   private withState(state: FlexUrlState): FlexUrl<S> {
-    return new FlexUrl<S>(state, this.schema);
+    return new FlexUrl<S>(state, this.schema, this.options);
   }
 
   /**
@@ -349,7 +351,7 @@ export class FlexUrl<S extends EndpointSchema | undefined = undefined> {
 
   /** `pathname?query` — shared by the three output forms below. */
   private renderPathAndQuery(): string {
-    const query = buildQueryString(this.state);
+    const query = buildQueryString(this.state, this.options);
 
     return `${this.state.pathname}${query ? `?${query}` : ''}`;
   }
@@ -588,15 +590,23 @@ export class FlexUrl<S extends EndpointSchema | undefined = undefined> {
  *   `schema` argument, narrowing `filter()`/`sort()`/`include()`/etc.
  * - `flexUrl<IssuesSchema>('/api/v1/issues')` — explicit generic, schema
  *   narrowing with no runtime schema object (and therefore no dev warnings).
+ * - `flexUrl('/posts', schema, {strictCommaEncoding: true})` — opts into
+ *   strict list encoding (see {@link FlexUrlOptions}), so a literal comma
+ *   inside one filter/sort/include/fields/appends value round-trips instead
+ *   of being treated as another separator. Default `false`.
  */
-export function flexUrl<S extends EndpointSchema | undefined = undefined>(input?: string | URL, schema?: S): FlexUrl<S> {
+export function flexUrl<S extends EndpointSchema | undefined = undefined>(
+  input?: string | URL,
+  schema?: S,
+  options?: FlexUrlOptions,
+): FlexUrl<S> {
   const {origin, pathname, search, hash} = parseInput(input);
-  const state = hydrateFromSearch(emptyState(origin, pathname, hash), search);
+  const state = hydrateFromSearch(emptyState(origin, pathname, hash), search, options);
 
-  return new FlexUrl<S>(state, schema);
+  return new FlexUrl<S>(state, schema, options);
 }
 
 /** Alias for `flexUrl()`. */
 export const url = flexUrl;
 
-export type {FilterOperator};
+export type {FilterOperator, FlexUrlOptions};

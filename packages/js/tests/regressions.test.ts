@@ -125,3 +125,22 @@ describe('list encoding round-trips', () => {
     });
   }
 });
+
+describe('flexUrl() with {strictCommaEncoding: true}', () => {
+  it('applies the option through the public factory, round-tripping a literal comma inside a filter value', () => {
+    const built = flexUrl('/posts', undefined, {strictCommaEncoding: true}).filter('title', 'foo,bar');
+
+    expect(built.toString()).toBe('/posts?filter[title]=foo%2Cbar');
+
+    const reparsed = flexUrl(built.toString(), undefined, {strictCommaEncoding: true});
+
+    expect(reparsed.getFilter('title')).toBe('foo,bar');
+  });
+
+  it('leaves an existing two-arg flexUrl(url, schema) call source-compatible (options defaults to lenient)', () => {
+    const built = flexUrl('/posts').filter('status', ['published', 'draft']);
+
+    expect(built.toString()).toBe('/posts?filter[status]=published,draft');
+    expect(built.getFilter('status')).toEqual(['published', 'draft']);
+  });
+});

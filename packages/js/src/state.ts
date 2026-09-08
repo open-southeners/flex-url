@@ -6,7 +6,7 @@
  * separate so the state shape and its transformations stay tree-shakeable
  * and independently testable.
  */
-import {buildKey, decodeList, decodeValue, encodeList, encodeValue, parseQueryString} from './encoding.js';
+import {buildKey, decodeList, decodeValue, encodeList, encodeValue, parseQueryString, type FlexUrlOptions} from './encoding.js';
 import type {FilterEntry, SortDirection, SortEntry} from './types.js';
 
 export interface PageState {
@@ -364,19 +364,19 @@ export function isBucketId(value: string): value is BucketId {
 // Parsing an existing query string into state
 // ---------------------------------------------------------------------------
 
-export function hydrateFromSearch(state: FlexUrlState, search: string): FlexUrlState {
+export function hydrateFromSearch(state: FlexUrlState, search: string, options?: FlexUrlOptions): FlexUrlState {
   let next = state;
 
   for (const {base, path, rawValue} of parseQueryString(search)) {
     if (base === 'filter' && path.length >= 1) {
       const [attribute = '', operator = ''] = path;
 
-      next = mergeFilterFromParse(next, attribute, operator, decodeList(rawValue));
+      next = mergeFilterFromParse(next, attribute, operator, decodeList(rawValue, options));
       continue;
     }
 
     if (base === 'sort' && path.length === 0) {
-      for (const token of decodeList(rawValue)) {
+      for (const token of decodeList(rawValue, options)) {
         if (token === '') continue;
 
         const desc = token.startsWith('-');
@@ -388,17 +388,17 @@ export function hydrateFromSearch(state: FlexUrlState, search: string): FlexUrlS
     }
 
     if (base === 'include' && path.length === 0) {
-      next = addIncludes(next, decodeList(rawValue).filter(token => token !== ''));
+      next = addIncludes(next, decodeList(rawValue, options).filter(token => token !== ''));
       continue;
     }
 
     if (base === 'fields' && path.length === 1) {
-      next = addFields(next, path[0] ?? '', decodeList(rawValue));
+      next = addFields(next, path[0] ?? '', decodeList(rawValue, options));
       continue;
     }
 
     if (base === 'appends' && path.length === 1) {
-      next = addAppends(next, path[0] ?? '', decodeList(rawValue));
+      next = addAppends(next, path[0] ?? '', decodeList(rawValue, options));
       continue;
     }
 
@@ -438,7 +438,7 @@ export function hydrateFromSearch(state: FlexUrlState, search: string): FlexUrlS
 // Serialising state back into a query string
 // ---------------------------------------------------------------------------
 
-export function buildQueryString(state: FlexUrlState): string {
+export function buildQueryString(state: FlexUrlState, options?: FlexUrlOptions): string {
   const pairs: string[] = [];
 
   for (const id of state.order) {
@@ -446,7 +446,7 @@ export function buildQueryString(state: FlexUrlState): string {
       for (const entry of state.filters) {
         const path = entry.operator === '' ? [entry.attribute] : [entry.attribute, entry.operator];
 
-        pairs.push(`${buildKey('filter', path)}=${encodeList(entry.values)}`);
+        pairs.push(`${buildKey('filter', path)}=${encodeList(entry.values, options)}`);
       }
 
       continue;
@@ -457,20 +457,20 @@ export function buildQueryString(state: FlexUrlState): string {
 
       const tokens = state.sorts.map(entry => (entry.direction === 'desc' ? `-${entry.attribute}` : entry.attribute));
 
-      pairs.push(`sort=${encodeList(tokens)}`);
+      pairs.push(`sort=${encodeList(tokens, options)}`);
       continue;
     }
 
     if (id === 'include') {
       if (state.includes.length === 0) continue;
 
-      pairs.push(`include=${encodeList(state.includes)}`);
+      pairs.push(`include=${encodeList(state.includes, options)}`);
       continue;
     }
 
     if (id === 'fields') {
       for (const type of state.fieldsOrder) {
-        pairs.push(`${buildKey('fields', [type])}=${encodeList(state.fields[type] ?? [])}`);
+        pairs.push(`${buildKey('fields', [type])}=${encodeList(state.fields[type] ?? [], options)}`);
       }
 
       continue;
@@ -478,7 +478,7 @@ export function buildQueryString(state: FlexUrlState): string {
 
     if (id === 'appends') {
       for (const type of state.appendsOrder) {
-        pairs.push(`${buildKey('appends', [type])}=${encodeList(state.appends[type] ?? [])}`);
+        pairs.push(`${buildKey('appends', [type])}=${encodeList(state.appends[type] ?? [], options)}`);
       }
 
       continue;

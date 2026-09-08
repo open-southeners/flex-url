@@ -10,7 +10,7 @@ import {fileURLToPath} from 'node:url';
 
 import {describe, expect, it} from 'vitest';
 
-import {flexUrl} from '../src/index.js';
+import {flexUrl, type FlexUrlOptions} from '../src/index.js';
 
 interface FixtureOperation {
   op: string;
@@ -24,6 +24,8 @@ interface FixtureRead extends FixtureOperation {
 interface FixtureCase {
   name: string;
   base: string;
+  /** Construction options passed to `flexUrl()` alongside `base`/`url`. Defaults to `{}` (today's lenient behaviour). */
+  options?: FlexUrlOptions;
   build: FixtureOperation[];
   url: string;
   /** Which URL `reads` is checked against — see `fixtures/SCHEMA.md`. Defaults to `'url'`. */
@@ -45,7 +47,7 @@ describe('shared fixtures (fixtures/cases.json)', () => {
 
   for (const testCase of cases) {
     it(testCase.name, () => {
-      let builder: AnyBuilder = flexUrl(testCase.base);
+      let builder: AnyBuilder = flexUrl(testCase.base, undefined, testCase.options);
 
       for (const step of testCase.build) {
         builder = builder[step.op](...step.args);
@@ -56,11 +58,11 @@ describe('shared fixtures (fixtures/cases.json)', () => {
       // Re-parsing the canonical output must reproduce it byte for byte. Asserted
       // for every case rather than a chosen few: it is the invariant that breaks
       // first when encoding and parsing stop being exact inverses of each other.
-      expect(flexUrl(testCase.url).toString()).toBe(testCase.url);
+      expect(flexUrl(testCase.url, undefined, testCase.options).toString()).toBe(testCase.url);
 
       if (!testCase.reads) return;
 
-      const reader: AnyBuilder = flexUrl(testCase.readsFrom === 'base' ? testCase.base : testCase.url);
+      const reader: AnyBuilder = flexUrl(testCase.readsFrom === 'base' ? testCase.base : testCase.url, undefined, testCase.options);
 
       for (const read of testCase.reads) {
         // A fixture's `null` means "absent"; PHP returns null where we return

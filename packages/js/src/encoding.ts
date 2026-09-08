@@ -51,6 +51,23 @@ const PERCENT_ESCAPE = /%[0-9A-Fa-f]{2}/g;
 const UTF8_DECODER = new TextDecoder('utf-8');
 const UTF8_ENCODER = new TextEncoder();
 
+/**
+ * Construction options accepted by `flexUrl()`/`FlexUrl` (and threaded down
+ * into the list encode/decode helpers below). Mirrored by the PHP package —
+ * do not add/rename a key here without updating both, plus `fixtures/SCHEMA.md`.
+ */
+export interface FlexUrlOptions {
+  /**
+   * Opt-in strict list encoding: a list value (`filter`/`sort`/`include`/
+   * `fields`/`appends`) is split on a raw `,` only, decoding each resulting
+   * piece afterwards — `%2C` is never treated as a separator, so a literal
+   * comma can be sent inside one value. Default `false`, which keeps today's
+   * lenient behaviour (decode first, then split on every comma however it
+   * was encoded).
+   */
+  strictCommaEncoding?: boolean;
+}
+
 /** Percent-encode a single scalar value for the wire (space → `%20`, plus → `%2B`). */
 export function encodeValue(value: string): string {
   return encodeURIComponent(value);
@@ -101,7 +118,11 @@ export function decodeValue(raw: string): string {
  * keeps `toString()` idempotent — escaping it would render `a%2Cb` first and
  * `a,b` after a round-trip.
  */
-export function encodeList(values: readonly string[]): string {
+export function encodeList(values: readonly string[], options?: FlexUrlOptions): string {
+  if (options?.strictCommaEncoding) {
+    return values.map(value => encodeValue(value)).join(',');
+  }
+
   return values.map(value => encodeValue(value).replaceAll('%2C', ',')).join(',');
 }
 
@@ -109,9 +130,18 @@ export function encodeList(values: readonly string[]): string {
  * Decode a raw value, then split it on every comma — a comma is a separator
  * however it was encoded. An empty raw string yields an empty list rather
  * than `['']`.
+ *
+ * With `{strictCommaEncoding: true}` this instead splits the still-encoded
+ * `raw` string on a literal `,` first, decoding each resulting piece
+ * afterwards — a `%2C` inside a piece is never treated as a separator, which
+ * is what lets a literal comma survive inside one list value.
  */
-export function decodeList(raw: string): string[] {
+export function decodeList(raw: string, options?: FlexUrlOptions): string[] {
   if (raw === '') return [];
+
+  if (options?.strictCommaEncoding) {
+    return raw.split(',').map(piece => decodeValue(piece));
+  }
 
   return decodeValue(raw).split(',');
 }

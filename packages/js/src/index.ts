@@ -39,3 +39,5 @@ export type {
   SortDirection,
   SortEntry,
 } from './types.js';
+
+export type {FlexUrlOptions} from './encoding.js';
