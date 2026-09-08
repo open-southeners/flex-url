@@ -7,11 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-09-08
+
 ### Changed
 
-- **A comma in a list-valued param is now always a separator**, whether it
-  arrives raw or percent-encoded. Lists are decoded first and split afterwards,
-  and a comma inside a value is emitted raw rather than escaped.
+- **A comma in a list-valued param is now always a separator by default**,
+  whether it arrives raw or percent-encoded. Lists are decoded first and
+  split afterwards, and a comma inside a value is emitted raw rather than
+  escaped.
 
   The old behaviour treated `%2C` as an escaped literal, which could not
   survive a round-trip: Symfony's `normalizeQueryString()` — behind Laravel's
@@ -26,10 +29,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   distinguishable server-side, and flex-url was reporting one value for a URL
   the backend filters by several.
 
-  A comma inside a single value is no longer representable — the same
-  limitation as OpenAPI's `style: form, explode: false`. Scalar params (`q`,
-  `page[...]`, `param()`) are unaffected: nothing splits them, so their commas
-  stay literal.
+  **This is a breaking change** for anyone relying on the old `%2C`-round-trips
+  behaviour with no override: a value that previously encoded and decoded back
+  correctly now silently comes back split into several. See `strictCommaEncoding`
+  below for the opt-in escape hatch.
+
+### Added
+
+- **`strictCommaEncoding` option**, passed via a `FlexUrlOptions` instance to
+  `FlexUrl::make()`/`FlexUrl::from()` (mirrors the TypeScript package's third
+  `flexUrl()` argument): restores the pre-3.0 behaviour opt-in — a list value
+  is split on a *raw* `,` only, decoding each piece afterwards (instead of
+  decoding first and splitting on whatever commas fall out), so a
+  percent-encoded comma inside one value stays literal while a real separator
+  comma still splits. Default `false` (the `### Changed` behaviour above).
+  `filter[title]=foo%2Cbar,baz` under `strictCommaEncoding: true` reads as
+  `["foo,bar", "baz"]` — a literal comma *and* an OR-alternative in the same
+  value list. A comma inside a single value is otherwise not representable —
+  the same limitation as OpenAPI's `style: form, explode: false`. Scalar
+  params (`q`, `page[...]`, `param()`) are unaffected either way: nothing
+  splits them, so their commas always stay literal.
 
 ## [2.1.0] - 2026-09-04
 
