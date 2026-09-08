@@ -19,6 +19,15 @@ Each entry in the top-level array is a case object:
   // this URL must be preserved through the build.
   "base": "https://api.example.com/posts",
 
+  // Optional: construction options passed to `flexUrl()`/`FlexUrl::make()`
+  // alongside `base` (and, when `readsFrom` is "base", the read-back parse
+  // too). Defaults to `{}` — today's lenient behaviour — when omitted, so
+  // every existing case is unaffected. Currently the only key is
+  // `strictCommaEncoding` (boolean): split a list value on a raw `,` only,
+  // decoding each piece afterwards, instead of decoding first and splitting
+  // on whatever commas fall out.
+  "options": { "strictCommaEncoding": true },
+
   // Ordered list of operation descriptors applied to the builder, one call
   // per descriptor, applied in array order. `op` is the method name shared
   // by both implementations (camelCase, matching the mirrored API); `args`

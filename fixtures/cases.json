@@ -2134,5 +2134,121 @@
       }
     ],
     "url": "https://api.example.com/posts?filter[a]=1"
+  },
+  {
+    "name": "a literal comma in a single filter value round-trips under strict comma encoding",
+    "base": "https://api.example.com/posts",
+    "options": {
+      "strictCommaEncoding": true
+    },
+    "build": [
+      {
+        "op": "filter",
+        "args": [
+          "title",
+          "foo,bar"
+        ]
+      }
+    ],
+    "url": "https://api.example.com/posts?filter[title]=foo%2Cbar",
+    "reads": [
+      {
+        "op": "getFilter",
+        "args": [
+          "title"
+        ],
+        "equals": "foo,bar"
+      }
+    ]
+  },
+  {
+    "name": "a raw comma between two values still splits under strict comma encoding",
+    "base": "https://api.example.com/posts",
+    "options": {
+      "strictCommaEncoding": true
+    },
+    "build": [
+      {
+        "op": "filter",
+        "args": [
+          "status",
+          [
+            "published",
+            "draft"
+          ]
+        ]
+      }
+    ],
+    "url": "https://api.example.com/posts?filter[status]=published,draft",
+    "reads": [
+      {
+        "op": "getFilter",
+        "args": [
+          "status"
+        ],
+        "equals": [
+          "published",
+          "draft"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "a literal comma and a real separator comma coexist under strict comma encoding",
+    "base": "https://api.example.com/posts?filter[title]=foo%2Cbar,baz",
+    "options": {
+      "strictCommaEncoding": true
+    },
+    "build": [],
+    "url": "https://api.example.com/posts?filter[title]=foo%2Cbar,baz",
+    "reads": [
+      {
+        "op": "getFilter",
+        "args": [
+          "title"
+        ],
+        "equals": [
+          "foo,bar",
+          "baz"
+        ]
+      }
+    ],
+    "readsFrom": "base"
+  },
+  {
+    "name": "a strict-encoded single value parses back to the same literal comma",
+    "base": "https://api.example.com/posts?filter[title]=foo%2Cbar",
+    "options": {
+      "strictCommaEncoding": true
+    },
+    "build": [],
+    "url": "https://api.example.com/posts?filter[title]=foo%2Cbar",
+    "reads": [
+      {
+        "op": "getFilter",
+        "args": [
+          "title"
+        ],
+        "equals": "foo,bar"
+      }
+    ]
+  },
+  {
+    "name": "a percent-encoded comma parses as literal content under strict comma encoding, unlike the lenient default",
+    "base": "https://api.example.com/posts?filter[title]=a%2Cb",
+    "options": {
+      "strictCommaEncoding": true
+    },
+    "build": [],
+    "url": "https://api.example.com/posts?filter[title]=a%2Cb",
+    "reads": [
+      {
+        "op": "getFilter",
+        "args": [
+          "title"
+        ],
+        "equals": "a,b"
+      }
+    ]
   }
 ]
