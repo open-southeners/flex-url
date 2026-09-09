@@ -38,7 +38,15 @@ jobs:
         run: npm run build --workspaces --if-present
 
       - name: Test
-        run: npm run test --workspaces --if-present
+        run: npm run coverage --workspaces --if-present
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: node${{ matrix.node-version }}
+          files: ./packages/js/coverage/clover.xml
+          fail_ci_if_error: true
 
   php:
     runs-on: ubuntu-latest
@@ -57,13 +65,21 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
-          coverage: none
+          coverage: pcov
 
       - name: Install dependencies
         run: composer update --prefer-dist --no-interaction --no-progress
 
       - name: Test
-        run: vendor/bin/phpunit
+        run: vendor/bin/phpunit -c phpunit.coverage.dist.xml
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: php${{ matrix.php-version }}
+          files: ./packages/php/clover.xml
+          fail_ci_if_error: true
 
       - name: Lint (Pint)
         run: vendor/bin/pint --test
