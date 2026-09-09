@@ -91,7 +91,7 @@ final class Encoding
 
         $bytes = preg_replace_callback(
             '/%([0-9A-Fa-f]{2})/',
-            static fn (array $matches): string => chr((int) hexdec($matches[1])),
+            static fn (array $matches): string => chr((int) hexdec($matches[1]) & 0xFF),
             $source,
         );
 
