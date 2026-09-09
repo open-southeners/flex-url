@@ -6,3 +6,4 @@ coverage
 vendor
 composer.lock
 .phpunit.cache
+clover.xml
