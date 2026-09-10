@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `not_equal` and `not_like` filter operators, with `neq` accepted as a DX
+  alias for `not_equal` alongside the existing `eq`. They join the
+  `EndpointSchema` operator union, so a typed endpoint can narrow to them like
+  any other operator.
+
+  A backend still has to register them for the attribute: an unregistered
+  operator key is rejected rather than applied, so an unsupported negation
+  drops the filter instead of silently matching the wrong rows. Note also that
+  apiable combines the values of one comma list with `OR`, which inverts wrong
+  under negation — `filter[a][not_equal]=x,y` asks for `a != x OR a != y`,
+  true for every row. That is a server-side concern; send one value per negated
+  filter until the backend states otherwise.
+
 ## [3.0.0] - 2026-09-09
 
 ### Changed

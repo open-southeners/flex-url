@@ -7,14 +7,20 @@
  * `'eq'` is still accepted as an *input* alias (see {@link normaliseOperator})
  * for ergonomics, but always normalises to `'equal'` before it reaches the
  * wire, `toParams()`, or the `EndpointSchema` operator union below.
+ *
+ * `'not_equal'`/`'not_like'` are the negations of `'equal'`/`'like'`. They are
+ * part of this grammar, but a given backend has to register them for the
+ * attribute like any other operator — an unregistered operator key is rejected
+ * rather than applied, so check the server side before reaching for them.
  */
-export type FilterOperator = 'equal' | 'like' | 'gt' | 'gte' | 'lt' | 'lte';
+export type FilterOperator = 'equal' | 'like' | 'gt' | 'gte' | 'lt' | 'lte' | 'not_equal' | 'not_like';
 
 /**
  * Operator identifiers accepted as *input* to `filter()`/`between()`.
- * `'eq'` is a DX alias for `'equal'` — see {@link FilterOperator}.
+ * `'eq'`/`'neq'` are DX aliases for `'equal'`/`'not_equal'` — see
+ * {@link FilterOperator}.
  */
-export type FilterOperatorInput = FilterOperator | 'eq';
+export type FilterOperatorInput = FilterOperator | 'eq' | 'neq';
 
 /**
  * Sort direction as exposed by the read API (`getSorts()`).
@@ -74,7 +80,7 @@ export type ScalarValue = string | number | boolean;
 export interface EndpointSchema {
   resource: string;
   path: string;
-  filters: Readonly<Record<string, { operators: ReadonlyArray<'equal' | 'like' | 'gt' | 'gte' | 'lt' | 'lte' | 'scope'>; values?: readonly string[] }>>;
+  filters: Readonly<Record<string, { operators: ReadonlyArray<'equal' | 'like' | 'gt' | 'gte' | 'lt' | 'lte' | 'not_equal' | 'not_like' | 'scope'>; values?: readonly string[] }>>;
   sorts: readonly string[];
   includes: readonly string[];
   fields: Readonly<Record<string, readonly string[]>>;
@@ -111,7 +117,7 @@ export type FilterOperatorFor<S, A extends string> = WithoutSchema<S> extends tr
   ? FilterOperatorInput
   : S extends EndpointSchema
     ? A extends keyof S['filters']
-      ? Exclude<S['filters'][A]['operators'][number], 'scope'> | 'eq'
+      ? Exclude<S['filters'][A]['operators'][number], 'scope'> | 'eq' | 'neq'
       : FilterOperatorInput
     : FilterOperatorInput;
 

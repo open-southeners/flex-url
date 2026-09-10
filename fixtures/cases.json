@@ -2250,5 +2250,194 @@
         "equals": "a,b"
       }
     ]
+  },
+  {
+    "name": "filter with the not_equal operator",
+    "base": "https://api.example.com/posts",
+    "build": [
+      {
+        "op": "filter",
+        "args": [
+          "status",
+          "not_equal",
+          "draft"
+        ]
+      }
+    ],
+    "url": "https://api.example.com/posts?filter[status][not_equal]=draft",
+    "reads": [
+      {
+        "op": "getFilter",
+        "args": [
+          "status",
+          "not_equal"
+        ],
+        "equals": "draft"
+      },
+      {
+        "op": "hasFilter",
+        "args": [
+          "status",
+          "not_equal"
+        ],
+        "equals": true
+      }
+    ]
+  },
+  {
+    "name": "filter with the not_like operator",
+    "base": "https://api.example.com/posts",
+    "build": [
+      {
+        "op": "filter",
+        "args": [
+          "title",
+          "not_like",
+          "draft"
+        ]
+      }
+    ],
+    "url": "https://api.example.com/posts?filter[title][not_like]=draft",
+    "reads": [
+      {
+        "op": "getFilter",
+        "args": [
+          "title",
+          "not_like"
+        ],
+        "equals": "draft"
+      }
+    ]
+  },
+  {
+    "name": "neq is an input alias for not_equal on the wire",
+    "base": "https://api.example.com/posts",
+    "build": [
+      {
+        "op": "filter",
+        "args": [
+          "status",
+          "neq",
+          "draft"
+        ]
+      }
+    ],
+    "url": "https://api.example.com/posts?filter[status][not_equal]=draft",
+    "reads": [
+      {
+        "op": "getFilter",
+        "args": [
+          "status",
+          "neq"
+        ],
+        "equals": "draft"
+      },
+      {
+        "op": "getFilter",
+        "args": [
+          "status",
+          "not_equal"
+        ],
+        "equals": "draft"
+      }
+    ]
+  },
+  {
+    "name": "removeFilter accepts the neq alias for a not_equal entry",
+    "base": "https://api.example.com/posts",
+    "build": [
+      {
+        "op": "filter",
+        "args": [
+          "status",
+          "not_equal",
+          "draft"
+        ]
+      },
+      {
+        "op": "removeFilter",
+        "args": [
+          "status",
+          "neq"
+        ]
+      }
+    ],
+    "url": "https://api.example.com/posts"
+  },
+  {
+    "name": "a negated multi-value filter comma-joins like any other operator",
+    "base": "https://api.example.com/posts",
+    "build": [
+      {
+        "op": "filter",
+        "args": [
+          "status",
+          "not_equal",
+          [
+            "draft",
+            "archived"
+          ]
+        ]
+      }
+    ],
+    "url": "https://api.example.com/posts?filter[status][not_equal]=draft,archived",
+    "reads": [
+      {
+        "op": "getFilter",
+        "args": [
+          "status",
+          "not_equal"
+        ],
+        "equals": [
+          "draft",
+          "archived"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "negated and plain operators coexist on one attribute",
+    "base": "https://api.example.com/posts",
+    "build": [
+      {
+        "op": "filter",
+        "args": [
+          "status",
+          "equal",
+          "published"
+        ]
+      },
+      {
+        "op": "filter",
+        "args": [
+          "status",
+          "not_like",
+          "draft"
+        ]
+      }
+    ],
+    "url": "https://api.example.com/posts?filter[status][equal]=published&filter[status][not_like]=draft",
+    "reads": [
+      {
+        "op": "getFilters",
+        "args": [],
+        "equals": [
+          {
+            "attribute": "status",
+            "operator": "equal",
+            "values": [
+              "published"
+            ]
+          },
+          {
+            "attribute": "status",
+            "operator": "not_like",
+            "values": [
+              "draft"
+            ]
+          }
+        ]
+      }
+    ]
   }
 ]

@@ -47,11 +47,51 @@ FlexUrl::make('/posts')->filter('status', ['published', 'draft']);
 | Greater than or equal | `gte` |
 | Less than | `lt` |
 | Less than or equal | `lte` |
+| Not equal | `not_equal` |
+| Not like | `not_like` |
 
 {% hint style="info" %}
-`eq` is also accepted as a DX alias for `equal` and always normalises to it before reaching the
-URL, `toParams()`, or a schema's operator list — sending `eq` on the wire is silently dropped by
-apiable as an unregistered operator key, so flex-url never emits it.
+`eq` and `neq` are accepted as DX aliases for `equal` and `not_equal`, and always normalise to
+the long form before reaching the URL, `toParams()`, or a schema's operator list — sending an
+alias on the wire is dropped by apiable as an unregistered operator key, so flex-url never
+emits one.
+{% endhint %}
+
+{% hint style="warning" %}
+`not_equal` and `not_like` are part of this grammar, but your backend still has to register
+them for the attribute like any other operator. An operator key that isn't registered is
+**rejected**, not applied — so the filter is dropped (or the request fails validation) rather
+than silently matching the wrong rows. Check the server side before reaching for them.
+{% endhint %}
+
+{% tabs %}
+{% tab title="TypeScript" %}
+```ts
+flexUrl('/posts').filter('status', 'not_equal', 'draft');
+// /posts?filter[status][not_equal]=draft
+
+flexUrl('/posts').filter('status', 'neq', 'draft');
+// /posts?filter[status][not_equal]=draft — the alias never reaches the wire
+```
+{% endtab %}
+
+{% tab title="PHP" %}
+```php
+FlexUrl::make('/posts')->filter('status', 'not_equal', 'draft');
+// /posts?filter[status][not_equal]=draft
+
+FlexUrl::make('/posts')->filter('status', 'neq', 'draft');
+// /posts?filter[status][not_equal]=draft — the alias never reaches the wire
+```
+{% endtab %}
+{% endtabs %}
+
+{% hint style="warning" %}
+A negated operator with several values is worth thinking about twice. apiable combines the
+values of one comma list with `OR`, so `filter[status][not_equal]=draft,archived` asks for
+`status != 'draft' OR status != 'archived'` — true for every row. Negation needs the values
+combined with `AND` instead (De Morgan), which is a server-side concern flex-url cannot fix from
+the URL. Send one value per negated filter until your backend states otherwise.
 {% endhint %}
 
 {% tabs %}

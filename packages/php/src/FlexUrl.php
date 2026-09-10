@@ -644,9 +644,12 @@ final readonly class FlexUrl implements Stringable
      * `eq` on the wire is silently dropped by apiable as an unregistered
      * operator key.
      */
+    /** DX aliases accepted as input; the long form is what reaches the wire. */
+    private const OPERATOR_ALIASES = ['eq' => 'equal', 'neq' => 'not_equal'];
+
     private static function normaliseOperator(string $operator): string
     {
-        return $operator === 'eq' ? 'equal' : $operator;
+        return self::OPERATOR_ALIASES[$operator] ?? $operator;
     }
 
     /**

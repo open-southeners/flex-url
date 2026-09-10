@@ -42,12 +42,15 @@ import type {
 } from './types.js';
 
 /**
- * `'eq'` is a DX alias for the canonical `'equal'` operator — see the
- * `FilterOperator` doc comment in `types.ts` for why `'equal'` (not `'eq'`)
- * is what actually reaches the wire and the `EndpointSchema` contract.
+ * `'eq'`/`'neq'` are DX aliases for the canonical `'equal'`/`'not_equal'`
+ * operators — see the `FilterOperator` doc comment in `types.ts` for why the
+ * long forms are what actually reach the wire and the `EndpointSchema`
+ * contract.
  */
+const OPERATOR_ALIASES: Readonly<Record<string, string>> = {eq: 'equal', neq: 'not_equal'};
+
 function normaliseOperator(operator: string): string {
-  return operator === 'eq' ? 'equal' : operator;
+  return OPERATOR_ALIASES[operator] ?? operator;
 }
 
 function toValueList(value: ScalarValue | ScalarValue[]): string[] {
