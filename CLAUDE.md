@@ -34,7 +34,7 @@ TypeScript (`packages/js`):
 ```bash
 npm ci                                    # from repo root — npm workspaces
 npm run test --workspace packages/js      # vitest run
-npm run coverage --workspace packages/js  # vitest run --coverage (clover.xml)
+npm run coverage --workspace packages/js  # vitest run --coverage (lcov.info + clover.xml)
 npm run lint --workspace packages/js      # eslint .
 npm run typecheck --workspace packages/js # tsc --noEmit (strict + loose configs)
 npm run build --workspace packages/js     # tsup

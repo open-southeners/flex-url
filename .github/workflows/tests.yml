@@ -45,7 +45,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: node${{ matrix.node-version }}
-          files: ./packages/js/coverage/clover.xml
+          files: ./packages/js/coverage/lcov.info
           fail_ci_if_error: true
 
   php:
